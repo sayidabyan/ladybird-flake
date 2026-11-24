@@ -139,7 +139,20 @@ stdenv.mkDerivation (finalAttrs: {
     brotli
     cpptrace
     fast-float
-    ffmpeg
+    (ffmpeg.overrideAttrs (prev: {
+      # Ladybird's code uses its own FFmpeg patches (e.g. AV_HWACCEL_FLAG_LADYBIRD_*), shipped in its
+      # vcpkg overlay port as 01xx-*.patch. Apply them from the release source so new or changed
+      # patches are picked up automatically. 0100 only renames symbol versions for the "-ladybird"
+      # library suffix, which this package doesn't use, so it's skipped.
+      postPatch = (prev.postPatch or "") + ''
+        for p in ${finalAttrs.src}/Meta/CMake/vcpkg/overlay-ports/ffmpeg/01*.patch; do
+          [ -e "$p" ] || continue
+          case "$(basename "$p")" in 0100-*) continue ;; esac
+          echo "applying Ladybird FFmpeg patch $(basename "$p")"
+          patch -p1 < "$p"
+        done
+      '';
+    }))
     fontconfig
     harfbuzz
     libavif
