@@ -119,6 +119,14 @@ Cached binaries target the `x86-64-v2` baseline, so they run on any x86-64 CPU w
 
 Every 12 hours a GitHub Actions workflow checks for a new Ladybird release. When there is one, it builds the release, uploads the result to the binary cache, and merges the update into `main`. The pinned nixpkgs is updated weekly in the same way. If an update fails to build, an issue is opened, and `main` keeps the last version that built successfully.
 
+## AI disclosure
+
+This flake was created with the help of an AI coding assistant (Anthropic's Claude Opus 5.5, running in OpenCode). The AI wrote most of the initial packaging: `flake.nix`, the derivation adapted from nixpkgs, `scripts/update.sh`, the GitHub Actions workflows and this README. That includes the fixes needed to build the alpha release (llvm-libc headers, dbus, Ladybird's FFmpeg patches, and the renamed baseline-CPU flag).
+
+The maintainer ([@sayidabyan](https://github.com/sayidabyan)) directed the work, reviewed the changes, and tested the result. The first build was verified by a full CI build and a local smoke test (rendering a page headless). Automated update PRs come from a plain GitHub Actions script, not an AI.
+
+If something looks wrong, please [open an issue](https://github.com/sayidabyan/ladybird-flake/issues).
+
 ## License
 
 The Nix packaging in this repository is derived from [nixpkgs](https://github.com/NixOS/nixpkgs) and is MIT-licensed. Ladybird itself is [BSD-2-Clause](https://github.com/LadybirdBrowser/ladybird/blob/master/LICENSE).
