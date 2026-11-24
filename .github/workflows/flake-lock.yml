@@ -1,0 +1,86 @@
+name: Update flake.lock
+
+on:
+  schedule:
+    - cron: "0 3 * * 0" # weekly, Sunday 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: update-ladybird # share with update.yml so they never run concurrently
+  cancel-in-progress: false
+
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        uses: wimpysworld/nothing-but-nix@main
+        with:
+          hatchet-protocol: rampage
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - uses: cachix/cachix-action@v16
+        with:
+          name: sayidabyan
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Update lock
+        id: lock
+        run: |
+          nix flake update
+          if git diff --quiet flake.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build
+        if: steps.lock.outputs.changed == 'true'
+        run: |
+          set -o pipefail
+          nix build -L .#ladybird 2>&1 | tee build.log
+
+      - name: Create pull request
+        if: steps.lock.outputs.changed == 'true'
+        id: pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: bot/flake-lock
+          delete-branch: true
+          add-paths: flake.lock
+          commit-message: "flake.lock: update nixpkgs"
+          title: "flake.lock: update nixpkgs"
+          body: Automated `nix flake update`. Built successfully and pushed to Cachix.
+          labels: automated
+
+      - name: Merge pull request
+        if: steps.pr.outputs.pull-request-number != ''
+        run: gh pr merge ${{ steps.pr.outputs.pull-request-number }} --squash --delete-branch
+
+      - name: Report failure
+        if: failure()
+        run: |
+          gh label create update-failed --color d73a4a --force >/dev/null
+          {
+            echo "Automated \`nix flake update\` failed."
+            echo
+            echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            if [ -f build.log ]; then
+              echo; echo '```'; tail -n 100 build.log; echo '```'
+            fi
+          } > issue.md
+          gh issue create --title "Automated flake.lock update failed" --label update-failed --body-file issue.md

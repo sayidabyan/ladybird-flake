@@ -1,0 +1,111 @@
+name: Update Ladybird
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Specific release tag, e.g. 2026.47.7 (default: latest release)"
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: update-ladybird
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        uses: wimpysworld/nothing-but-nix@main
+        with:
+          hatchet-protocol: rampage
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - uses: cachix/cachix-action@v16
+        with:
+          name: sayidabyan
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Bump sources
+        id: update
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+        run: ./scripts/update.sh ${INPUT_TAG:+"$INPUT_TAG"}
+
+      - name: Build
+        if: steps.update.outputs.updated == 'true'
+        run: |
+          set -o pipefail
+          nix build -L .#ladybird 2>&1 | tee build.log
+
+      - name: Create pull request
+        if: steps.update.outputs.updated == 'true'
+        id: pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: bot/update-ladybird
+          delete-branch: true
+          add-paths: pkgs/ladybird/sources.json
+          commit-message: "ladybird: ${{ steps.update.outputs.old_version }} -> ${{ steps.update.outputs.version }}"
+          title: "ladybird: ${{ steps.update.outputs.old_version }} -> ${{ steps.update.outputs.version }}"
+          body: |
+            Automated update to Ladybird alpha release `${{ steps.update.outputs.new_tag }}`.
+
+            - Release notes: https://github.com/LadybirdBrowser/ladybird/releases/tag/${{ steps.update.outputs.new_tag }}
+            - Changes: https://github.com/LadybirdBrowser/ladybird/compare/${{ steps.update.outputs.old_rev }}...${{ steps.update.outputs.rev }}
+
+            Built successfully on x86_64-linux and pushed to `sayidabyan.cachix.org`.
+          labels: automated
+
+      - name: Merge pull request
+        if: steps.pr.outputs.pull-request-number != ''
+        run: gh pr merge ${{ steps.pr.outputs.pull-request-number }} --squash --delete-branch
+
+      - name: Close failure issue
+        if: success() && steps.update.outputs.updated == 'true'
+        run: |
+          for n in $(gh issue list --label update-failed --state open --json number -q '.[].number'); do
+            gh issue close "$n" --comment "Fixed by update to ${{ steps.update.outputs.new_tag }}."
+          done
+
+      - name: Report failure
+        if: failure()
+        run: |
+          gh label create update-failed --color d73a4a --force >/dev/null
+          {
+            echo "Automated update failed for Ladybird release \`${{ steps.update.outputs.new_tag }}\`."
+            echo
+            echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo
+            if [ -f build.log ]; then
+              echo '<details><summary>Last 100 lines of build log</summary>'
+              echo
+              echo '```'
+              tail -n 100 build.log
+              echo '```'
+              echo '</details>'
+            fi
+          } > issue.md
+          existing=$(gh issue list --label update-failed --state open --json number -q '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file issue.md
+          else
+            gh issue create --title "Automated Ladybird update failed" --label update-failed --body-file issue.md
+          fi

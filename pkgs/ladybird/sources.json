@@ -1,0 +1,11 @@
+{
+  "version": "2026.47.7",
+  "tag": "2026.47.7",
+  "rev": "4e9acf4c02ca23239fe32224a303dcea4614562b",
+  "srcHash": "sha256-ZSJ6QjGA7MAR/8joe0NwkhJyWZw/ag4tOCd0+F7siAA=",
+  "cargoHash": "sha256-fYqoQxHodl7DJMfjp3S000CF8kFSD996LTH3dKg7Dtw=",
+  "llvmLibc": {
+    "rev": "e54169423e7ee5d8b41c2f1b6f7a59000c901ee0",
+    "sha512": "4ab7f1f2c49a661148b38414c16d3600467f43a295ab0383358098eb2434dd0c21ea202da25bcd466d3b8f1b397527dd7793f4a7025f79388492fee291947bed"
+  }
+}
