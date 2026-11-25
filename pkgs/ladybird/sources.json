@@ -1,8 +1,8 @@
 {
-  "version": "2026.47.7",
-  "tag": "2026.47.7",
-  "rev": "4e9acf4c02ca23239fe32224a303dcea4614562b",
-  "srcHash": "sha256-ZSJ6QjGA7MAR/8joe0NwkhJyWZw/ag4tOCd0+F7siAA=",
+  "version": "2026.47.8",
+  "tag": "2026.47.8",
+  "rev": "0be55a57cc07ed258362c631a13a10bb4f6d707a",
+  "srcHash": "sha256-KIwlRGKI+wcYiHmfRzat9wQKM7kCYogFrKpCIqAEidA=",
   "cargoHash": "sha256-fYqoQxHodl7DJMfjp3S000CF8kFSD996LTH3dKg7Dtw=",
   "llvmLibc": {
     "rev": "e54169423e7ee5d8b41c2f1b6f7a59000c901ee0",
