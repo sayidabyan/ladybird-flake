@@ -1,9 +1,9 @@
 {
-  "version": "2026.47.8",
-  "tag": "2026.47.8",
-  "rev": "0be55a57cc07ed258362c631a13a10bb4f6d707a",
-  "srcHash": "sha256-KIwlRGKI+wcYiHmfRzat9wQKM7kCYogFrKpCIqAEidA=",
-  "cargoHash": "sha256-fYqoQxHodl7DJMfjp3S000CF8kFSD996LTH3dKg7Dtw=",
+  "version": "2026.48.0",
+  "tag": "2026.48.0",
+  "rev": "5eb636e3ecfac0bdfdc6d56558cba8ac9b71d514",
+  "srcHash": "sha256-+6/8MgZtE8yesD5FNoEudyR0h/dLc/JEKeiP70D9p3w=",
+  "cargoHash": "sha256-v8/n/wo1gOy9e3qBtbdrYdgiW8FOPPz1xoIpBxB4s7E=",
   "llvmLibc": {
     "rev": "e54169423e7ee5d8b41c2f1b6f7a59000c901ee0",
     "sha512": "4ab7f1f2c49a661148b38414c16d3600467f43a295ab0383358098eb2434dd0c21ea202da25bcd466d3b8f1b397527dd7793f4a7025f79388492fee291947bed"
